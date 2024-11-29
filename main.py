@@ -75,18 +75,16 @@ def rag_system(pdf_paths, question):
 
     # Step 4: Retrieve the most relevant document based on the question
     context = search(question, index, tokenizer, model, texts)
-    import pdb;pdb.set_trace()
 
     # Step 5: Use GPT-2 to generate an answer based on the context
     answer = generate_answer(question, context, tokenizer, model)
     import pdb;pdb.set_trace()
-
     return answer
 
 if __name__ == "__main__":
     # Example usage
     pdf_paths = ["data/world_cup_2022_final.pdf", "data/how_to_make_a_cake_recipe.pdf", "data/champions_league_2023_final.pdf"]
-    question = "What is the result of the world cup game match ?"
+    question = "Who scored in the world cup final"
     answer = rag_system(pdf_paths, question)
     print(answer)
 

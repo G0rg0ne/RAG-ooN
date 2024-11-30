@@ -6,7 +6,7 @@ https://github.com/langchain-ai/rag-from-scratch?tab=readme-ov-file
 
 https://www.youtube.com/watch?v=sVcwVQRHIc8
 
-Here’s a `README.md` file to guide users on how to set up and run your RAG (Retrieval-Augmented Generation) system inside a Docker container.
+![rag_detail_v2](assets/302837092-54a2d76c-b07e-49e7-b4ce-fc45667360a1.png)
 
 # RAG (Retrieval-Augmented Generation) System
 

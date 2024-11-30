@@ -27,6 +27,7 @@ def extract_text_from_pdfs(pdf_paths):
 
 
 def encode_texts(texts, tokenizer, model, device):
+    
     logger.debug("Encoding texts into embeddings...")  # Debug log
 
     # Tokenize the texts and move the input tensor to the specified device (GPU/CPU)

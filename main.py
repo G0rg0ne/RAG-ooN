@@ -49,21 +49,20 @@ def generate_answer(question, context, tokenizer, model):
     input_ids = tokenizer.encode(input_text, return_tensors="pt")
     
     # Generate a response using GPT-2
-    output_ids = model.generate(input_ids, max_length=500, num_return_sequences=1, no_repeat_ngram_size=2, temperature=0.7)
+    output_ids = model.generate(input_ids, max_length=250, num_return_sequences=1, no_repeat_ngram_size=2,do_sample=True)
     answer = tokenizer.decode(output_ids[0], skip_special_tokens=True)
     return answer
 
 # Main function
 def rag_system(pdf_paths, question):
     # Load the pre-trained GPT-2 model and tokenizer
-    #model_name = "gpt2"
-    model_name = "distilgpt2"  # Use a smaller, distilled version of GPT-2
-    tokenizer = GPT2Tokenizer.from_pretrained(model_name)
-    model = GPT2LMHeadModel.from_pretrained(model_name, device_map="cpu")
+    model_name = "EleutherAI/gpt-neo-2.7B"  # The 125M version is optimized for CPU
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForCausalLM.from_pretrained(model_name)
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({'pad_token': '[PAD]'})
         model.resize_token_embeddings(len(tokenizer))
-
+    import pdb;pdb.set_trace()
     # Step 1: Extract text from the PDFs
     texts = extract_text_from_pdfs(pdf_paths)
 
@@ -78,13 +77,12 @@ def rag_system(pdf_paths, question):
 
     # Step 5: Use GPT-2 to generate an answer based on the context
     answer = generate_answer(question, context, tokenizer, model)
-    import pdb;pdb.set_trace()
     return answer
 
 if __name__ == "__main__":
     # Example usage
     pdf_paths = ["data/world_cup_2022_final.pdf", "data/how_to_make_a_cake_recipe.pdf", "data/champions_league_2023_final.pdf"]
-    question = "Who scored in the world cup final"
+    question = "what is the world cup match date?"
     answer = rag_system(pdf_paths, question)
     print(answer)
 

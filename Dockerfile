@@ -1,15 +1,28 @@
-# Step 1: Choose the base image
-FROM python:3.10-slim
+# Use an official NVIDIA CUDA base image with PyTorch and Python
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
 
-# Step 2: Set environment variables to avoid Python buffering (good practice for logging)
+# Set environment variables for Python
+ENV LANG=C.UTF-8
 ENV PYTHONUNBUFFERED=1
 
-# Step 3: Set the working directory inside the container
+# Install system dependencies and tools
+RUN apt-get update && apt-get install -y \
+    python3-pip \
+    python3-dev \
+    python3-setuptools \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    git \
+    curl \
+    vim \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory inside the container
 WORKDIR /app
 
-# Step 4: Copy the requirements file
-COPY requirements.txt .
+# Install Python dependencies
+COPY requirements.txt /app/requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
-# Step 5: Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
 

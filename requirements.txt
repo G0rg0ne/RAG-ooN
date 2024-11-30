@@ -1,5 +1,7 @@
-PyPDF2
-sentence-transformers
-faiss-cpu
-transformers
-streamlit
+torch>=2.0.0
+transformers>=4.30.0
+loguru>=0.6.0
+faiss-cpu>=1.7.2  # You can use faiss-gpu if you want GPU support for FAISS
+sentence-transformers>=2.2.0
+pdfplumber>=0.7.4
+streamlit>=1.24.0

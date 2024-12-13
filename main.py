@@ -4,26 +4,73 @@ import faiss
 from transformers import pipeline, AutoTokenizer, AutoModelForCausalLM
 import pdfplumber
 from transformers import AutoTokenizer, AutoModelForCausalLM
+import os
+import warnings
+from PyPDF2 import PdfReader
+from sentence_transformers import SentenceTransformer, util
+import re
+warnings.filterwarnings('ignore')  # Suppress all other warnings
+os.environ['TRANSFORMERS_VERBOSITY'] = 'error'  # Suppress transformer warnings
 
 torch.cuda.empty_cache()
 # Check if GPU is available
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device('cuda')
 logger.info(f"Using device: {device}")  # Log the device being used
 
 
-# Updated PDF text extraction function
-# Step 1: Extract text from PDF files
-def extract_text_from_pdfs(pdf_paths):
-    texts = []
+def split_pdf_into_chunks(pdf_path, chunk_size=500, overlap=50):
+    """
+    Splits a PDF file into text chunks suitable for a RAG system.
+
+    Args:
+        pdf_path (str): Path to the PDF file.
+        chunk_size (int): Maximum number of words per chunk.
+        overlap (int): Number of overlapping words between consecutive chunks.
+
+    Returns:
+        list: A list of text chunks.
+    """
+    # Read the PDF
+    reader = PdfReader(pdf_path)
+    
+    # Extract text from all pages
+    text = "\n".join(page.extract_text() for page in reader.pages)
+
+    # Clean the text
+    text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
+
+    # Split text into words
+    words = text.split()
+
+    # Create chunks
+    chunks = []
+    for i in range(0, len(words), chunk_size - overlap):
+        chunk = words[i:i + chunk_size]
+        chunks.append(" ".join(chunk))
+
+    return chunks
+
+def process_list_of_pdfs(pdf_paths, chunk_size=500, overlap=50):
+    """
+    Process a list of PDF files and split them into text chunks.
+
+    Args:
+        pdf_paths (list): List of paths to the PDF files.
+        chunk_size (int): Maximum number of words per chunk.
+        overlap (int): Number of overlapping words between consecutive chunks.
+
+    Returns:
+        dict: A dictionary where keys are PDF filenames and values are lists of text chunks.
+    """
+    chunks_by_file = {}
+
     for pdf_path in pdf_paths:
-        logger.info(f"Extracting text from {pdf_path}...")  # Log progress
-        with pdfplumber.open(pdf_path) as pdf:
-            text = ""
-            for page in pdf.pages:
-                text += page.extract_text()
-            texts.append(text)
-        logger.info(f"Completed extraction from {pdf_path}.")
-    return texts
+        filename = pdf_path.split("/")[-1]  # Extract filename from path
+        chunks = split_pdf_into_chunks(pdf_path, chunk_size, overlap)
+        chunks_by_file[filename] = chunks
+
+    return chunks_by_file
 
 
 def encode_texts(texts, tokenizer, model, device):
@@ -101,27 +148,26 @@ def generate_answer(question, context, tokenizer, model):
 
 # Main function
 def rag_system(pdf_paths, question):
+    
     logger.info("Starting the RAG system...")  # Log start of RAG system
     # Load the pre-trained GPT-2 model and tokenizer
-    model_name = "gpt2-medium"  # The 125M version is optimized for CPU
-    logger.info(f"Loading GPT-2 model: {model_name}")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
-    if tokenizer.pad_token is None:
-        tokenizer.add_special_tokens({"pad_token": "[PAD]"})
-        model.resize_token_embeddings(len(tokenizer))
-
-    # Step 1: Extract text from the PDFs
-    texts = extract_text_from_pdfs(pdf_paths)
-
+    model_name = "microsoft/phi-2"  # The 125M v ersion is optimized for CPU
+    logger.info(f"Loading model: {model_name}")
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", trust_remote_code=True, device_map="auto")
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    
+    #if tokenizer.pad_token is None:
+    #    tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+    #    model.resize_token_embeddings(len(tokenizer))
+    
     # Step 2: Encode the texts into embeddings
-    embeddings = encode_texts(texts, tokenizer, model, device)
+    embeddings = encode_texts(pdf_paths, tokenizer, model, device)
 
     # Step 3: Build the FAISS index for fast retrieval
     index = build_faiss_index(embeddings)
 
     # Step 4: Retrieve the most relevant document based on the question
-    context = search(question, index, tokenizer, model, texts)
+    context = search(question, index, tokenizer, model, pdf_paths)
 
     # Step 5: Use GPT-2 to generate an answer based on the context
     answer = generate_answer(question, context, tokenizer, model)
@@ -129,6 +175,86 @@ def rag_system(pdf_paths, question):
     logger.info("RAG system completed.")  # Log end of RAG system
     return answer
 
+def build_retriever(chunks_by_file, model_name="all-MiniLM-L6-v2"):
+    """
+    Build a retriever by embedding text chunks using a SentenceTransformer model.
+
+    Args:
+        chunks_by_file (dict): Dictionary where keys are filenames and values are lists of text chunks.
+        model_name (str): Name of the SentenceTransformer model to use for embeddings.
+
+    Returns:
+        dict: A dictionary with filenames as keys and embedded chunks as values.
+        SentenceTransformer: The loaded model for performing retrieval.
+    """
+    logger.info(f"Building retriever: {model_name}") 
+    model = SentenceTransformer(model_name)
+    embeddings_by_file = {}
+
+    for filename, chunks in chunks_by_file.items():
+        embeddings = model.encode(chunks, convert_to_tensor=True)
+        embeddings_by_file[filename] = embeddings
+
+    return embeddings_by_file, model
+
+def retrieve(query, embeddings_by_file, retriever_model, top_k=5):
+    """
+    Retrieve the most relevant chunks for a given query.
+
+    Args:
+        query (str): The input query string.
+        embeddings_by_file (dict): Dictionary with filenames as keys and embedded chunks as values.
+        retriever_model (SentenceTransformer): The model used to embed the query.
+        top_k (int): Number of top matches to return.
+
+    Returns:
+        list: A list of tuples containing the filename, chunk, and score of the top matches.
+    """
+    query_embedding = retriever_model.encode(query, convert_to_tensor=True)
+    results = []
+
+    for filename, embeddings in embeddings_by_file.items():
+        scores = util.cos_sim(query_embedding, embeddings)[0]
+        top_results = torch.topk(scores, k=min(top_k, len(scores)))
+
+        for score, idx in zip(top_results.values, top_results.indices):
+            results.append((filename, idx.item(), score.item()))
+
+    # Sort results by score
+    results = sorted(results, key=lambda x: x[2], reverse=True)
+    return results[:top_k]
+
+def generate_answer(query, retrieved_chunks, context_chunks, max_new_tokens=200):
+    """
+    Generate an answer using the language model and retrieved chunks.
+
+    Args:
+        query (str): The input query.
+        retrieved_chunks (list): List of tuples (filename, chunk_index, score) from the retriever.
+        context_chunks (dict): Dictionary of all chunks by filename.
+        model: The causal language model.
+        tokenizer: The tokenizer for the model.
+        max_length (int): Maximum length of the generated response.
+
+    Returns:
+        str: The generated answer.
+    """
+    model_name = "microsoft/phi-2"  # The 125M v ersion is optimized for CPU
+    logger.info(f"Loading model: {model_name}")
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", trust_remote_code=True, device_map="auto")
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    # Combine the retrieved chunks into a context
+    context = " ".join([f"[{chunk[0]}: Chunk {chunk[1] + 1}] {context_chunks[chunk[0]][chunk[1]]}" for chunk in retrieved_chunks])
+
+    # Prepare input for the model
+    input_text = f"Context: {context}\n\nQuestion: {query}\nAnswer:"
+    inputs = tokenizer(input_text, return_tensors="pt", truncation=True).to(model.device)
+    
+    # Generate a response
+    output = model.generate(**inputs, max_new_tokens=max_new_tokens, eos_token_id=tokenizer.eos_token_id)
+    # Decode the output
+    answer = tokenizer.decode(output[0], skip_special_tokens=True)
+    return answer
 
 if __name__ == "__main__":
     # Example usage
@@ -137,7 +263,13 @@ if __name__ == "__main__":
         "data/how_to_make_a_cake_recipe.pdf",
         "data/champions_league_2023_final.pdf",
     ]
-    question = "What is the result of the 2022 world cup final"
-    logger.info(f"Question: {question}")  # Log the question being asked
-    answer = rag_system(pdf_paths, question)
+    all_chunks = process_list_of_pdfs(pdf_paths, chunk_size=500, overlap=50)
+
+    # Build the retriever
+    embeddings_by_file, retriever_model = build_retriever(all_chunks)
+    # Query the retriever
+    query = "Who scored during the 2022 world cup final "
+    retrieved_chunks = retrieve(query, embeddings_by_file, retriever_model, top_k=1)
+    logger.info(f"Question: {query}")  # Log the question being asked
+    answer = generate_answer(query, retrieved_chunks, all_chunks)
     logger.info(f"Answer: {answer}")  # Log the answer generated

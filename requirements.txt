@@ -6,3 +6,4 @@ sentence-transformers>=2.2.0
 pdfplumber>=0.7.4
 streamlit>=1.24.0
 htmlTemplates
+accelerate>=0.26.0

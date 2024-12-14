@@ -64,6 +64,9 @@ If you don't have a GPU, just run the container without the GPU flag:
 docker run -v $(pwd):/app -p 8501:8501 rag-system
 ```
 
+```bash
+docker run -it --rm --gpus all -p 8501:8501 -v $PWD:/app ragoon_cuda /bin/bash
+```
 - `-v $(pwd):/app`: Mounts the current directory to `/app` inside the container so any code changes are reflected immediately.
 - `-p 8501:8501`: Exposes port 8501 for Streamlit (if you're using it).
 

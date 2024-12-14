@@ -9,14 +9,6 @@ import warnings
 from PyPDF2 import PdfReader
 from sentence_transformers import SentenceTransformer, util
 import re
-warnings.filterwarnings('ignore')  # Suppress all other warnings
-os.environ['TRANSFORMERS_VERBOSITY'] = 'error'  # Suppress transformer warnings
-
-torch.cuda.empty_cache()
-# Check if GPU is available
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device('cuda')
-logger.info(f"Using device: {device}")  # Log the device being used
 
 
 def split_pdf_into_chunks(pdf_path, chunk_size=500, overlap=50):
@@ -257,6 +249,15 @@ def generate_answer(query, retrieved_chunks, context_chunks, max_new_tokens=200)
     return answer
 
 if __name__ == "__main__":
+    warnings.filterwarnings('ignore')  # Suppress all other warnings
+    os.environ['TRANSFORMERS_VERBOSITY'] = 'error'  # Suppress transformer warnings
+
+    torch.cuda.empty_cache()
+    # Check if GPU is available
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device('cuda')
+    logger.info(f"Using device: {device}")  # Log the device being used
+
     # Example usage
     pdf_paths = [
         "data/world_cup_2022_final.pdf",
@@ -268,7 +269,7 @@ if __name__ == "__main__":
     # Build the retriever
     embeddings_by_file, retriever_model = build_retriever(all_chunks)
     # Query the retriever
-    query = "Who scored during the 2022 world cup final "
+    query = "Who scored in the Champions league 2023 final ? "
     retrieved_chunks = retrieve(query, embeddings_by_file, retriever_model, top_k=1)
     logger.info(f"Question: {query}")  # Log the question being asked
     answer = generate_answer(query, retrieved_chunks, all_chunks)

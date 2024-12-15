@@ -3,8 +3,11 @@
 
 # RAG (Retrieval-Augmented Generation) System
 
-This project implements a Retrieval-Augmented Generation (RAG) system using a PreTrained LLM(GPT,Phi,....) . The system retrieves relevant documents from a set of PDFs and generates answers to queries using a pre-trained language model (GPT-2 or GPT-Neo).
+This project implements a Retrieval-Augmented Generation (RAG) system based on a custom made Vectorstore & Conversation chain . The system retrieves relevant inforamtion from a set of PDFs and generates answers to queries using a pre-trained language model (GPT-2 or GPT-Neo).
+This system was built using Stramlit wich is an open-source Python framework for data scientists and AI/ML engineers to deliver interactive data apps.
+
 ![rag_detail_v2](assets/interface.png)
+
 Remark : In this project i tried to build the langchaing's 
 
 These are some usefull material/links that I used to build this project :
@@ -16,9 +19,9 @@ These are some usefull material/links that I used to build this project :
 ## Features
 
 - **PDF Text Extraction**: Extracts text from PDF files using `PyPDF2`.
-- **Embedding Generation**: Encodes extracted texts into embeddings using a pre-trained language model (GPT-2 or GPT-Neo).
-- **Document Retrieval**: Uses FAISS for fast retrieval of the most relevant document based on a query.
-- **Answer Generation**: Uses GPT-2/GPT-Neo to generate an answer based on the retrieved document.
+- **Embedding Generation**: Encodes extracted texts into embeddings using a pre-trained language model .
+- **Document Retrieval**: Uses SentenceTransformer to create embeddings with document-level metadata and retreive relevant chunks using cosine similarity.
+- **Answer Generation**: Uses any LLM of your choice (depending on your computational resources) to generate an answer based on the retrieved chunks/documents.
 
 ## Requirements
 
@@ -54,26 +57,20 @@ To run the container, you have two options depending on whether you have a GPU o
 Use the `--gpus all` flag to ensure the container has access to the GPU.
 
 ```bash
-docker run -it --rm --gpus all -v $PWD:/app ragoon_cuda /bin/bash
-```
-
-#### For machines without GPU support:
-
-If you don't have a GPU, just run the container without the GPU flag:
-
-```bash
-docker run -v $(pwd):/app -p 8501:8501 rag-system
-```
-
-```bash
 docker run -it --rm --gpus all -p 8501:8501 -v $PWD:/app ragoon_cuda /bin/bash
 ```
+
 - `-v $(pwd):/app`: Mounts the current directory to `/app` inside the container so any code changes are reflected immediately.
 - `-p 8501:8501`: Exposes port 8501 for Streamlit (if you're using it).
 
 ### Step 3: Running the System
 
-Once the Docker container is running, the RAG system will be ready. If you're using **Streamlit** for interaction, you can access the app at `http://localhost:8501`.
+Once the Docker container is running, You can launch you application by using the following command: 
+```bash
+streamlit run app.py
+```
+
+With this your RAG system will is ready. You can access the app at `http://localhost:8501`.
 
 ### Step 4: Example Usage
 
@@ -94,17 +91,7 @@ This allows you to track the progress of document extraction, embedding generati
 
 The following dependencies are required for the project. You can install them using the provided `requirements.txt` file.
 
-```txt
-torch>=2.0.0
-transformers>=4.30.0
-loguru>=0.6.0
-faiss-cpu>=1.7.2  # Use faiss-gpu for GPU support
-sentence-transformers>=2.2.0
-pdfplumber>=0.7.4
-streamlit>=1.24.0
-```
-
-To install the dependencies manually:
+To install/upgarde the dependencies manually:
 
 ```bash
 pip install -r requirements.txt
@@ -118,25 +105,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **CUDA Not Available**: If you're getting an error about CUDA not being available, make sure you have the necessary NVIDIA drivers installed on your machine. Also, verify that the `nvidia-docker` package is installed and working.
 - **Memory Issues**: If you're running into memory issues, try reducing the model size or splitting your PDFs into smaller parts for processing.
-
-## Acknowledgments
-
-- **PyTorch**: For the powerful machine learning framework.
-- **Transformers**: For providing pre-trained language models like GPT-2 and GPT-Neo.
-- **FAISS**: For efficient similarity search on embeddings.
-- **Streamlit**: For the easy-to-use interface for building web applications.
-
----
-
-This README should help you set up, build, and run the RAG system using Docker, as well as guide you through basic usage. If you encounter any issues, feel free to open an issue in the repository.
-```
-
-### Explanation of Sections:
-
-1. **Features**: Summarizes the functionality of the RAG system.
-2. **Requirements**: Lists the prerequisites, including Docker and Python libraries.
-3. **Docker Setup**: Detailed instructions on how to build and run the Docker container, both for GPU and non-GPU machines.
-4. **Usage**: Explains how to use the system, including how to add PDF files, run the system, and access logs.
-5. **Python Dependencies**: Lists the required Python packages and provides the option to install them manually.
-6. **License**: Placeholder for the project license (MIT).
-7. **Troubleshooting**: Common issues and solutions.

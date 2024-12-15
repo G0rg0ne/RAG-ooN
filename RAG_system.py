@@ -186,7 +186,7 @@ def build_retriever(text_chunks):
 
     return embeddings_by_file, retriever_model
 
-def retrieve(query, embeddings_by_file, retriever_model, top_k=5):
+def retrieve(query, embeddings_by_file, retriever_model, top_k=3):
     """
     Retrieve the most relevant chunks for a given query.
 

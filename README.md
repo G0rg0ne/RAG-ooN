@@ -15,7 +15,7 @@ These are some usefull material/links that I used to build this project :
 
 ## Features
 
-- **PDF Text Extraction**: Extracts text from PDF files using `pdfplumber`.
+- **PDF Text Extraction**: Extracts text from PDF files using `PyPDF2`.
 - **Embedding Generation**: Encodes extracted texts into embeddings using a pre-trained language model (GPT-2 or GPT-Neo).
 - **Document Retrieval**: Uses FAISS for fast retrieval of the most relevant document based on a query.
 - **Answer Generation**: Uses GPT-2/GPT-Neo to generate an answer based on the retrieved document.

@@ -167,27 +167,24 @@ def rag_system(pdf_paths, question):
     logger.info("RAG system completed.")  # Log end of RAG system
     return answer
 
-def build_retriever(chunks_by_file, model_name="all-MiniLM-L6-v2"):
+def build_retriever(text_chunks):
     """
-    Build a retriever by embedding text chunks using a SentenceTransformer model.
+    Build embeddings for the text chunks using a retriever model.
 
     Args:
-        chunks_by_file (dict): Dictionary where keys are filenames and values are lists of text chunks.
-        model_name (str): Name of the SentenceTransformer model to use for embeddings.
+        text_chunks (dict): Dictionary where keys are filenames and values are lists of text chunks.
 
     Returns:
-        dict: A dictionary with filenames as keys and embedded chunks as values.
-        SentenceTransformer: The loaded model for performing retrieval.
+        dict, SentenceTransformer: A dictionary of embeddings by file and the retriever model.
     """
-    logger.info(f"Building retriever: {model_name}") 
-    model = SentenceTransformer(model_name)
+    retriever_model = SentenceTransformer('all-MiniLM-L6-v2')  # Example model
     embeddings_by_file = {}
 
-    for filename, chunks in chunks_by_file.items():
-        embeddings = model.encode(chunks, convert_to_tensor=True)
+    for filename, chunks in text_chunks.items():
+        embeddings = retriever_model.encode(chunks, convert_to_tensor=True)
         embeddings_by_file[filename] = embeddings
 
-    return embeddings_by_file, model
+    return embeddings_by_file, retriever_model
 
 def retrieve(query, embeddings_by_file, retriever_model, top_k=5):
     """
@@ -231,6 +228,7 @@ def generate_answer(query, retrieved_chunks, context_chunks, max_new_tokens=200)
     Returns:
         str: The generated answer.
     """
+    
     model_name = "microsoft/phi-2"  # The 125M v ersion is optimized for CPU
     logger.info(f"Loading model: {model_name}")
     model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype="auto", trust_remote_code=True, device_map="auto")
@@ -265,8 +263,6 @@ if __name__ == "__main__":
         "data/champions_league_2023_final.pdf",
     ]
     all_chunks = process_list_of_pdfs(pdf_paths, chunk_size=500, overlap=50)
-
-    # Build the retriever
     embeddings_by_file, retriever_model = build_retriever(all_chunks)
     # Query the retriever
     query = "Who scored in the Champions league 2023 final ? "

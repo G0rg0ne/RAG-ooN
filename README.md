@@ -1,16 +1,17 @@
 # RAG-ooN
 
 
-https://github.com/langchain-ai/rag-from-scratch?tab=readme-ov-file
-
-
-https://www.youtube.com/watch?v=sVcwVQRHIc8
-
-![rag_detail_v2](assets/302837092-54a2d76c-b07e-49e7-b4ce-fc45667360a1.png)
-
 # RAG (Retrieval-Augmented Generation) System
 
-This project implements a Retrieval-Augmented Generation (RAG) system using the PyTorch, FAISS, and Transformers libraries. The system retrieves relevant documents from a set of PDFs and generates answers to queries using a pre-trained language model (GPT-2 or GPT-Neo).
+This project implements a Retrieval-Augmented Generation (RAG) system using a PreTrained LLM(GPT,Phi,....) . The system retrieves relevant documents from a set of PDFs and generates answers to queries using a pre-trained language model (GPT-2 or GPT-Neo).
+![rag_detail_v2](assets/interface.png)
+Remark : In this project i tried to build the langchaing's 
+
+These are some usefull material/links that I used to build this project :
+
+[Lance Martin's amazing course about RAG](https://www.youtube.com/watch?v=sVcwVQRHIc8) and the [GitHub](https://github.com/langchain-ai/rag-from-scratch?tab=readme-ov-file) Where you can find the Notebooks with the source code.
+
+![rag_detail_v2](assets/302837092-54a2d76c-b07e-49e7-b4ce-fc45667360a1.png)
 
 ## Features
 

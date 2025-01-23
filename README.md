@@ -8,7 +8,7 @@ This system was built using Stramlit wich is an open-source Python framework for
 
 ![rag_detail_v2](assets/interface.png)
 
-Remark : In this project i tried to build the langchaing's 
+Remark : In this project I tried to re-build the langchaing's "conversation chain" strcuture from scratch. This has to take in to consideration the context window to ipdate the lenght of the "cash" of the model.
 
 These are some usefull material/links that I used to build this project :
 

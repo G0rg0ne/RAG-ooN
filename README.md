@@ -3,12 +3,12 @@
 
 # RAG (Retrieval-Augmented Generation) System
 
-This project implements a Retrieval-Augmented Generation (RAG) system based on a custom made Vectorstore & Conversation chain . The system retrieves relevant inforamtion from a set of PDFs and generates answers to queries using a pre-trained language model (GPT-2 or GPT-Neo).
+This project implements a Retrieval-Augmented Generation (RAG) system based on a custom made Vectorstore & Conversation chain . The system retrieves relevant inforamtion from a set of PDFs and generates answers to queries using a pre-trained language model (GPT-2 or GPT-Neo). For this particular project I am using a microsoft/phi-2 and I am also using HuggingFace model zoo to retrieve pre-trained language models.
 This system was built using Stramlit wich is an open-source Python framework for data scientists and AI/ML engineers to deliver interactive data apps.
 
 ![rag_detail_v2](assets/interface.png)
 
-Remark : In this project I tried to re-build the langchaing's "conversation chain" strcuture from scratch. This has to take in to consideration the context window to ipdate the lenght of the "cash" of the model.
+Remark : In this project I tried to re-build the langchaing's "conversation chain" strcuture from scratch. This has to take in to consideration the context window to ipdate the lenght of the "cash" of the model. The goal is to set-up the main infrastructure of the RAG system and we are going to aim for performance by evaluating and benchmarking the best model that can fit our use case using "LangSmith".
 
 These are some usefull material/links that I used to build this project :
 
